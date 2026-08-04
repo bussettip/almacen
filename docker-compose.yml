@@ -20,10 +20,12 @@ services:
     command: >
       bash -c "
       apt-get update &&
-      apt-get install -y libpng-dev libjpeg-dev libfreetype6-dev libzip-dev libcurl4-openssl-dev pkg-config unzip git &&
+      apt-get install -y libpng-dev libjpeg-dev libfreetype6-dev libzip-dev libcurl4-openssl-dev libxml2-dev libxslt1-dev pkg-config unzip git &&
       docker-php-ext-configure gd --with-freetype --with-jpeg &&
-      docker-php-ext-install -j$$(nproc) gd pdo pdo_mysql mysqli zip curl &&
+      docker-php-ext-install -j$$(nproc) gd pdo pdo_mysql mysqli zip curl soap xsl &&
       a2enmod rewrite &&
+      mkdir -p /var/www/html/uploads/csd /var/www/html/uploads/cfdi &&
+      chown -R www-data:www-data /var/www/html/uploads &&
       curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php &&
       php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer &&
       composer install --working-dir=/var/www/html --no-dev --no-interaction --no-progress --prefer-dist &&

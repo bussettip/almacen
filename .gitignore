@@ -14,5 +14,7 @@ Thumbs.db
 *.log
 
 # Datos fiscales (nunca subir llaves privadas ni XML timbrados)
-/uploads/csd/
-/uploads/cfdi/
+/uploads/csd/*
+!/uploads/csd/.gitkeep
+/uploads/cfdi/*
+!/uploads/cfdi/.gitkeep

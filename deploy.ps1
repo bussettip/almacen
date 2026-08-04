@@ -16,6 +16,14 @@ $files = @{
     "setup.php" = "setup.php"
     "includes\auth.php" = "includes/auth.php"
     "includes\header.php" = "includes/header.php"
+    "includes\cfdi_helper.php" = "includes/cfdi_helper.php"
+    "cfdi_descargar.php" = "cfdi_descargar.php"
+    "configuracion.php" = "configuracion.php"
+    "clientes.php" = "clientes.php"
+    "productos.php" = "productos.php"
+    "ventas.php" = "ventas.php"
+    "composer.json" = "composer.json"
+    "composer.lock" = "composer.lock"
 }
 
 foreach ($f in $files.Keys) {

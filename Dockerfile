@@ -1,9 +1,9 @@
 FROM php:8.2-apache
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
-        libpng-dev libjpeg-dev libfreetype6-dev libzip-dev libcurl4-openssl-dev pkg-config unzip git && \
+        libpng-dev libjpeg-dev libfreetype6-dev libzip-dev libcurl4-openssl-dev libxml2-dev libxslt1-dev pkg-config unzip git && \
     docker-php-ext-configure gd --with-freetype --with-jpeg && \
-    docker-php-ext-install pdo pdo_mysql mysqli gd zip curl && \
+    docker-php-ext-install pdo pdo_mysql mysqli gd zip curl soap xsl && \
     a2enmod rewrite && \
     docker-php-ext-enable pdo_mysql
 
