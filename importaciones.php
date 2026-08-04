@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 $titulo = 'Importaciones';
 require 'includes/auth.php';
 verificarPermiso(basename(__FILE__, '.php'));

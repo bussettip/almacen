@@ -1,4 +1,4 @@
-﻿<?php require 'config.php';
+<?php require 'config.php';
 if (isset($_SESSION['usuario_id'])) redirect('dashboard.php');
 
 $error = '';

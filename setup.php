@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 // Script de instalacion: crea usuario admin por defecto
 $host = getenv('DB_HOST') ?: 'mysql_db1';
 $db   = getenv('DB_NAME') ?: 'control_almacenes';

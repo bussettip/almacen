@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 // Generador de codigos QR para productos
 // Uso: qr.php?data=CODIGO_PRODUCTO
 require_once __DIR__ . '/includes/phpqrcode.php';

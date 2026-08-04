@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 $titulo = 'Categorias de Empleados';
 require 'includes/auth.php';
 

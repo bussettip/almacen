@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 $titulo = 'Asignar Ubicacion';
 require 'includes/auth.php';
 

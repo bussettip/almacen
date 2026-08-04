@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 // Conexion a la base de datos
 $host = getenv('DB_HOST') ?: 'mysql_db1';
 $db   = getenv('DB_NAME') ?: 'control_almacenes';

@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 $titulo = 'Salida de Inventario';
 require 'includes/auth.php';
 verificarPermiso(basename(__FILE__, '.php'));

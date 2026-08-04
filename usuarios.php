@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 $titulo = 'Usuarios';
 require 'includes/auth.php';
 

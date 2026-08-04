@@ -1,4 +1,4 @@
-﻿<?php
+<?php
 $titulo = 'Escanear QR';
 require 'includes/auth.php';
 verificarPermiso(basename(__FILE__, '.php'));
