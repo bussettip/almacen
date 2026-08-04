@@ -38,6 +38,9 @@ $pdo->exec("CREATE TABLE IF NOT EXISTS venta_detalle (
     FOREIGN KEY (producto_id) REFERENCES productos(id)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
 
+require_once 'includes/cfdi_helper.php';
+cfdiMigrar($pdo);
+
 $action = $_GET['action'] ?? 'list';
 $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
 require_once 'includes/surtir_common.php';
@@ -204,6 +207,37 @@ if ($action === 'status' && $id && isset($_GET['estatus'])) {
     if (in_array($estatus, $validos)) {
         $pdo->prepare("UPDATE ventas SET estatus=? WHERE id=?")->execute([$estatus, $id]);
         alert('success', "Estatus actualizado a: $estatus");
+    }
+    redirect("ventas.php?action=detalle&id=$id");
+}
+
+if ($action === 'facturar' && $id) {
+    $venta = $pdo->prepare("SELECT v.*, c.rfc FROM ventas v JOIN clientes c ON c.id=v.cliente_id WHERE v.id=?");
+    $venta->execute([$id]); $venta = $venta->fetch();
+    if (!$venta) { alert('danger', 'Venta no encontrada'); redirect('ventas.php'); }
+
+    $existe = $pdo->prepare("SELECT COUNT(*) FROM facturas_emitidas WHERE venta_id=?");
+    $existe->execute([$id]);
+    if ((int)$existe->fetchColumn() > 0) {
+        alert('warning', 'Esta venta ya tiene una factura emitida');
+        redirect("ventas.php?action=detalle&id=$id");
+    }
+
+    $res = cfdiGenerarIngreso($pdo, $id);
+    if (!$res['ok']) {
+        alert('danger', 'No se pudo generar el CFDI: ' . $res['mensaje']);
+        redirect("ventas.php?action=detalle&id=$id");
+    }
+
+    cfdiMarcarFolioUsado($pdo, $res['folio']);
+
+    $timbre = cfdiTimbrarFinkok($pdo, $res['xml']);
+    if ($timbre['ok']) {
+        cfdiGuardarEmitida($pdo, 'venta', $id, $timbre['uuid'], $res['serie'], $res['folio'], $res['rfc_receptor'], $res['total'], $timbre['xml'], 'timbrado', $timbre['mensaje'], $_SESSION['usuario_id']);
+        alert('success', "CFDI timbrado. UUID: " . $timbre['uuid']);
+    } else {
+        cfdiGuardarEmitida($pdo, 'venta', $id, null, $res['serie'], $res['folio'], $res['rfc_receptor'], $res['total'], $res['xml'], 'precfdi', $timbre['mensaje'], $_SESSION['usuario_id']);
+        alert($timbre['no_creds'] ? 'warning' : 'danger', 'CFDI generado y sellado, pendiente de timbrar: ' . $timbre['mensaje']);
     }
     redirect("ventas.php?action=detalle&id=$id");
 }
@@ -571,8 +605,37 @@ function sumarSurtido(detalleId, requerido) {
 
     <div class="form-actions" style="margin-top:16px;">
         <a href="prefactura.php?venta_id=<?=$venta['id']?>" class="btn btn-primary" target="_blank"> Prefactura PDF</a>
+        <?php
+        $facturas = $pdo->prepare("SELECT * FROM facturas_emitidas WHERE venta_id=? ORDER BY created_at DESC");
+        $facturas->execute([$id]); $facturas = $facturas->fetchAll();
+        ?>
+        <?php if (empty($facturas)): ?>
+        <a href="ventas.php?action=facturar&id=<?=$venta['id']?>" class="btn btn-success" onclick="return confirm('¿Generar factura CFDI 4.0 de esta venta?')"> Emitir Factura</a>
+        <?php else: ?>
+        <a href="ventas.php?action=facturar&id=<?=$venta['id']?>" class="btn btn-success" onclick="return confirm('Ya existe una factura. ¿Generar otra?')"> Emitir otra Factura</a>
+        <?php endif; ?>
         <a href="ventas.php" class="btn btn-secondary"><- Volver</a>
     </div>
+
+    <?php if (!empty($facturas)): ?>
+    <h3 style="margin:16px 0 8px;">Facturas emitidas</h3>
+    <div class="table-wrapper">
+        <table>
+            <tr><th>UUID</th><th>Serie-Folio</th><th>Estatus</th><th>Total</th><th>Fecha</th><th>XML</th><th>Mensaje</th></tr>
+            <?php foreach ($facturas as $f): ?>
+            <tr>
+                <td><?=h($f['uuid'] ?? '-')?></td>
+                <td><?=h($f['serie'] ?? '')?>-<?=h($f['folio'] ?? '')?></td>
+                <td><span class="badge <?=$f['estatus']==='timbrado'?'badge-success':($f['estatus']==='error'?'badge-danger':'badge-warning')?>"><?=h($f['estatus'])?></span></td>
+                <td><?=moneda($f['total'])?></td>
+                <td><?=$f['created_at']?></td>
+                <td><a href="cfdi_descargar.php?id=<?=$f['id']?>" class="btn btn-sm btn-info" target="_blank">XML</a></td>
+                <td style="font-size:.75rem;"><?=h($f['mensaje'] ?? '')?></td>
+            </tr>
+            <?php endforeach; ?>
+        </table>
+    </div>
+    <?php endif; ?>
 </div>
 
 <?php else: ?>

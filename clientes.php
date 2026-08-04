@@ -3,6 +3,9 @@ $titulo = 'Clientes';
 require 'includes/auth.php';
 verificarPermiso(basename(__FILE__, '.php'));
 
+require_once 'includes/cfdi_helper.php';
+cfdiMigrar($pdo);
+
 $pdo->exec("CREATE TABLE IF NOT EXISTS clientes (
     id INT AUTO_INCREMENT PRIMARY KEY,
     codigo VARCHAR(50) UNIQUE,
@@ -52,15 +55,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $tipo = $_POST['tipo'] ?? 'persona_fisica';
         $contacto_nombre = trim($_POST['contacto_nombre'] ?? '');
         $notas = trim($_POST['notas'] ?? '');
+        $uso_cfdi = trim($_POST['uso_cfdi'] ?? '');
+        $regimen_fiscal_receptor = trim($_POST['regimen_fiscal_receptor'] ?? '');
+        $codigo_postal = trim($_POST['codigo_postal'] ?? '');
         $activo = isset($_POST['activo']) ? 1 : 0;
 
         if ($action === 'create') {
-            $stmt = $pdo->prepare("INSERT INTO clientes (codigo,nombre,rfc,email,telefono,direccion,ciudad,estado,pais,tipo,contacto_nombre,notas,activo) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?)");
-            $stmt->execute([$codigo?:null,$nombre,$rfc?:null,$email?:null,$telefono?:null,$direccion?:null,$ciudad?:null,$estado?:null,$pais,$tipo,$contacto_nombre?:null,$notas?:null,$activo]);
+            $stmt = $pdo->prepare("INSERT INTO clientes (codigo,nombre,rfc,email,telefono,direccion,ciudad,estado,pais,tipo,contacto_nombre,notas,uso_cfdi,regimen_fiscal_receptor,codigo_postal,activo) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+            $stmt->execute([$codigo?:null,$nombre,$rfc?:null,$email?:null,$telefono?:null,$direccion?:null,$ciudad?:null,$estado?:null,$pais,$tipo,$contacto_nombre?:null,$notas?:null,$uso_cfdi?:null,$regimen_fiscal_receptor?:null,$codigo_postal?:null,$activo]);
             alert('success', 'Cliente creado');
         } else {
-            $stmt = $pdo->prepare("UPDATE clientes SET codigo=?,nombre=?,rfc=?,email=?,telefono=?,direccion=?,ciudad=?,estado=?,pais=?,tipo=?,contacto_nombre=?,notas=?,activo=? WHERE id=?");
-            $stmt->execute([$codigo?:null,$nombre,$rfc?:null,$email?:null,$telefono?:null,$direccion?:null,$ciudad?:null,$estado?:null,$pais,$tipo,$contacto_nombre?:null,$notas?:null,$activo,$id]);
+            $stmt = $pdo->prepare("UPDATE clientes SET codigo=?,nombre=?,rfc=?,email=?,telefono=?,direccion=?,ciudad=?,estado=?,pais=?,tipo=?,contacto_nombre=?,notas=?,uso_cfdi=?,regimen_fiscal_receptor=?,codigo_postal=?,activo=? WHERE id=?");
+            $stmt->execute([$codigo?:null,$nombre,$rfc?:null,$email?:null,$telefono?:null,$direccion?:null,$ciudad?:null,$estado?:null,$pais,$tipo,$contacto_nombre?:null,$notas?:null,$uso_cfdi?:null,$regimen_fiscal_receptor?:null,$codigo_postal?:null,$activo,$id]);
             alert('success', 'Cliente actualizado');
         }
         redirect('clientes.php');
@@ -125,6 +131,57 @@ if ($action === 'create' || $action === 'edit'):
                 <label>Contacto</label>
                 <input type="text" name="contacto_nombre" value="<?=h($isEdit ? $c['contacto_nombre'] : '')?>">
             </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Uso CFDI</label>
+                <select name="uso_cfdi">
+                    <option value="">-- Seleccionar --</option>
+                    <?php foreach ([
+                        'G01' => 'G01 - Adquisicion de mercancias',
+                        'G02' => 'G02 - Devoluciones, descuentos y bonificaciones',
+                        'G03' => 'G03 - Gastos en general',
+                        'I01' => 'I01 - Construcciones',
+                        'I02' => 'I02 - Mobilario y equipo de oficina',
+                        'I03' => 'I03 - Equipo de transporte',
+                        'I04' => 'I04 - Equipo de computo y accesorios',
+                        'I05' => 'I05 - Dados, troqueles, moldes, matrices y herramental',
+                        'I06' => 'I06 - Comunicaciones telefonicas',
+                        'I07' => 'I07 - Comunicaciones satelitales',
+                        'I08' => 'I08 - Otra maquinaria y equipo',
+                        'D01' => 'D01 - Honorarios medicos, dentales y gastos hospitalarios',
+                        'P01' => 'P01 - Por definir',
+                    ] as $clave => $desc): ?>
+                    <option value="<?=$clave?>" <?=($isEdit && $c['uso_cfdi'] ?? '') === $clave ? 'selected' : ''?>><?=$desc?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Regimen fiscal (receptor)</label>
+                <select name="regimen_fiscal_receptor">
+                    <option value="">-- Seleccionar --</option>
+                    <?php foreach ([
+                        '601' => '601 - General de Ley Personas Morales',
+                        '603' => '603 - Personas Morales con Fines no Lucrativos',
+                        '606' => '606 - Plataformas Tecnologicas',
+                        '608' => '608 - Demas Personas Morales y Fiscas',
+                        '610' => '610 - Residentes en el Extranjero sin Establecimiento Permanente en Mexico',
+                        '611' => '611 - Ingresos por Dividendos (socios y accionistas)',
+                        '612' => '612 - Personas Fisicas con Actividades Empresariales y Profesionales',
+                        '614' => '614 - Fiscas con Actividades no Empresariales',
+                        '616' => '616 - Sin obligaciones fiscales',
+                        '621' => '621 - Incorporacion Fiscal',
+                        '625' => '625 - Regimen de las Actividades Empresariales con Ingresos a traves de Plataformas Tecnologicas',
+                        '626' => '626 - Regimen Simplificado de Confianza',
+                    ] as $clave => $desc): ?>
+                    <option value="<?=$clave?>" <?=($isEdit && $c['regimen_fiscal_receptor'] ?? '') === $clave ? 'selected' : ''?>><?=$desc?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+        </div>
+        <div class="form-group">
+            <label>Codigo postal fiscal</label>
+            <input type="text" name="codigo_postal" maxlength="5" value="<?=h($isEdit ? $c['codigo_postal'] : '')?>">
         </div>
         <div class="form-row">
             <div class="form-group">

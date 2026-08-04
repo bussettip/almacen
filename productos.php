@@ -3,6 +3,9 @@ $titulo = 'Productos';
 require 'includes/auth.php';
 verificarPermiso(basename(__FILE__, '.php'));
 
+require_once 'includes/cfdi_helper.php';
+cfdiMigrar($pdo);
+
 try { $pdo->exec("ALTER TABLE productos ADD COLUMN imagen VARCHAR(255) DEFAULT NULL"); } catch (Exception $e) {}
 
 $action = $_GET['action'] ?? 'list';
@@ -22,6 +25,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $stock_minimo = str_replace(',','', $_POST['stock_minimo'] ?? 0);
         $stock_maximo = str_replace(',','', $_POST['stock_maximo'] ?? 0);
         $codigo_qr = trim($_POST['codigo_qr'] ?? '');
+        $clave_prod_serv = trim($_POST['clave_prod_serv'] ?? '01010101');
+        $clave_unidad = trim($_POST['clave_unidad'] ?? 'H87');
+        $objeto_impuesto = trim($_POST['objeto_impuesto'] ?? '02');
         $activo = isset($_POST['activo']) ? 1 : 0;
         $imagen = $_POST['imagen_actual'] ?? '';
 
@@ -36,12 +42,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         }
 
         if ($action === 'create') {
-            $stmt = $pdo->prepare("INSERT INTO productos (codigo,nombre,descripcion,categoria_id,unidad_medida_id,precio_compra,precio_venta,stock_minimo,stock_maximo,codigo_qr,activo,imagen) VALUES (?,?,?,?,?,?,?,?,?,?,?,?)");
-            $stmt->execute([$codigo,$nombre,$descripcion,$categoria_id,$unidad_medida_id,$precio_compra,$precio_venta,$stock_minimo,$stock_maximo,$codigo_qr?:null,$activo,$imagen?:null]);
+            $stmt = $pdo->prepare("INSERT INTO productos (codigo,nombre,descripcion,categoria_id,unidad_medida_id,precio_compra,precio_venta,stock_minimo,stock_maximo,codigo_qr,clave_prod_serv,clave_unidad,objeto_impuesto,activo,imagen) VALUES (?,?,?,?,?,?,?,?,?,?,?,?,?,?,?)");
+            $stmt->execute([$codigo,$nombre,$descripcion,$categoria_id,$unidad_medida_id,$precio_compra,$precio_venta,$stock_minimo,$stock_maximo,$codigo_qr?:null,$clave_prod_serv?:null,$clave_unidad?:null,$objeto_impuesto?:null,$activo,$imagen?:null]);
             alert('success', 'Producto creado');
         } else {
-            $stmt = $pdo->prepare("UPDATE productos SET codigo=?,nombre=?,descripcion=?,categoria_id=?,unidad_medida_id=?,precio_compra=?,precio_venta=?,stock_minimo=?,stock_maximo=?,codigo_qr=?,activo=?,imagen=? WHERE id=?");
-            $stmt->execute([$codigo,$nombre,$descripcion,$categoria_id,$unidad_medida_id,$precio_compra,$precio_venta,$stock_minimo,$stock_maximo,$codigo_qr?:null,$activo,$imagen?:null,$id]);
+            $stmt = $pdo->prepare("UPDATE productos SET codigo=?,nombre=?,descripcion=?,categoria_id=?,unidad_medida_id=?,precio_compra=?,precio_venta=?,stock_minimo=?,stock_maximo=?,codigo_qr=?,clave_prod_serv=?,clave_unidad=?,objeto_impuesto=?,activo=?,imagen=? WHERE id=?");
+            $stmt->execute([$codigo,$nombre,$descripcion,$categoria_id,$unidad_medida_id,$precio_compra,$precio_venta,$stock_minimo,$stock_maximo,$codigo_qr?:null,$clave_prod_serv?:null,$clave_unidad?:null,$objeto_impuesto?:null,$activo,$imagen?:null,$id]);
             alert('success', 'Producto actualizado');
         }
         redirect('productos.php');
@@ -120,6 +126,24 @@ if ($action === 'create' || $action === 'edit'):
                     <?php foreach ($unidades as $u): ?>
                     <option value="<?=$u['id']?>" <?=($isEdit && $p['unidad_medida_id']==$u['id'])?'selected':''?>><?=h($u['codigo'])?> - <?=h($u['nombre'])?></option>
                     <?php endforeach; ?>
+                </select>
+            </div>
+            <div class="form-group">
+                <label>Clave unidad SAT (c_ClaveUnidad)</label>
+                <input type="text" name="clave_unidad" maxlength="3" value="<?=h($isEdit ? $p['clave_unidad'] : 'H87')?>" placeholder="H87">
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-group">
+                <label>Clave producto SAT (c_ClaveProdServ)</label>
+                <input type="text" name="clave_prod_serv" maxlength="8" value="<?=h($isEdit ? $p['clave_prod_serv'] : '01010101')?>" placeholder="01010101">
+            </div>
+            <div class="form-group">
+                <label>Objeto impuesto</label>
+                <select name="objeto_impuesto">
+                    <option value="02" <?=($isEdit && $p['objeto_impuesto'] ?? '') === '02' ? 'selected' : ''?>>02 - Si objeto de impuesto</option>
+                    <option value="01" <?=($isEdit && $p['objeto_impuesto'] ?? '') === '01' ? 'selected' : ''?>>01 - No objeto de impuesto</option>
+                    <option value="03" <?=($isEdit && $p['objeto_impuesto'] ?? '') === '03' ? 'selected' : ''?>>03 - Si objeto de impuesto y no obligado al desglose</option>
                 </select>
             </div>
         </div>
