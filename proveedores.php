@@ -102,14 +102,18 @@ if ($action === 'create' || $action === 'edit'):
 <div class="card">
     <div class="card-header">
         <h2>Proveedores</h2>
-        <a href="proveedores.php?action=create" class="btn btn-primary">+ Nuevo</a>
+        <div class="table-actions">
+            <button type="button" class="btn btn-success btn-sm" onclick="exportarTablaExcel('#tabla-listado','proveedores')"> Exportar Excel</button>
+            <button type="button" class="btn btn-info btn-sm" onclick="imprimirTablaPDF('#tabla-listado','Proveedores')"> Imprimir PDF</button>
+            <a href="proveedores.php?action=create" class="btn btn-primary btn-sm">+ Nuevo</a>
+        </div>
     </div>
     <form class="search-bar" method="get">
         <input type="text" name="search" placeholder="Buscar..." value="<?=h($search)?>">
         <button type="submit" class="btn btn-secondary btn-sm">Buscar</button>
     </form>
     <div class="table-wrapper">
-        <table>
+        <table id="tabla-listado">
             <tr><th>RFC</th><th>Nombre</th><th>Contacto</th><th>Telefono</th><th>Email</th><th>Activo</th><th>Acciones</th></tr>
             <?php foreach ($proveedores as $p): ?>
             <tr>

@@ -229,9 +229,15 @@ require 'includes/header.php';
 
 <?php if ($recientes): ?>
 <div class="card">
-    <div class="card-header"><h2>Descargas recientes (<?=count($recientes)?>)</h2></div>
+    <div class="card-header">
+        <h2>Descargas recientes (<?=count($recientes)?>)</h2>
+        <div class="table-actions">
+            <button type="button" class="btn btn-success btn-sm" onclick="exportarTablaExcel('#tabla-recientes','facturas_sat')"> Exportar Excel</button>
+            <button type="button" class="btn btn-info btn-sm" onclick="imprimirTablaPDF('#tabla-recientes','Descargas recientes SAT')"> Imprimir PDF</button>
+        </div>
+    </div>
     <div class="table-wrapper">
-        <table>
+        <table id="tabla-recientes">
             <tr>
                 <th>UUID</th>
                 <th>Emisor</th>

@@ -82,10 +82,14 @@ if ($action === 'create' || $action === 'edit'):
 <div class="card">
     <div class="card-header">
         <h2>Categorias</h2>
-        <a href="categorias.php?action=create" class="btn btn-primary">+ Nueva</a>
+        <div class="table-actions">
+            <button type="button" class="btn btn-success btn-sm" onclick="exportarTablaExcel('#tabla-listado','categorias')"> Exportar Excel</button>
+            <button type="button" class="btn btn-info btn-sm" onclick="imprimirTablaPDF('#tabla-listado','Categorias')"> Imprimir PDF</button>
+            <a href="categorias.php?action=create" class="btn btn-primary btn-sm">+ Nueva</a>
+        </div>
     </div>
     <div class="table-wrapper">
-        <table>
+        <table id="tabla-listado">
             <tr><th>Nombre</th><th>Categoria padre</th><th>Activo</th><th>Acciones</th></tr>
             <?php foreach ($categorias as $c): ?>
             <tr>

@@ -153,9 +153,11 @@ require 'includes/header.php';
 <div class="card">
     <div class="card-header">
         <h2>Empleados</h2>
-        <div>
+        <div class="table-actions">
+            <button type="button" class="btn btn-success btn-sm" onclick="exportarTablaExcel('#tabla-listado','empleados')"> Exportar Excel</button>
+            <button type="button" class="btn btn-info btn-sm" onclick="imprimirTablaPDF('#tabla-listado','Empleados')"> Imprimir PDF</button>
             <a href="categorias_empleados.php" class="btn btn-info btn-sm">Categorias</a>
-            <a href="empleados.php?action=create" class="btn btn-primary">+ Nuevo</a>
+            <a href="empleados.php?action=create" class="btn btn-primary btn-sm">+ Nuevo</a>
         </div>
     </div>
     <form class="search-bar" method="get">
@@ -163,7 +165,7 @@ require 'includes/header.php';
         <button type="submit" class="btn btn-secondary btn-sm">Buscar</button>
     </form>
     <div class="table-wrapper">
-        <table>
+        <table id="tabla-listado">
             <tr><th>Codigo</th><th>Nombre</th><th>Apellido</th><th>Categoria</th><th>Email</th><th>Telefono</th><th>Estado</th><th>Acciones</th></tr>
             <?php foreach ($empleados as $e): ?>
             <tr>

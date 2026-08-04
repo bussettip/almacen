@@ -171,14 +171,18 @@ if ($action === 'create' || $action === 'edit'):
 <div class="card">
     <div class="card-header">
         <h2>Clientes</h2>
-        <a href="clientes.php?action=create" class="btn btn-primary">+ Nuevo</a>
+        <div class="table-actions">
+            <button type="button" class="btn btn-success btn-sm" onclick="exportarTablaExcel('#tabla-listado','clientes')"> Exportar Excel</button>
+            <button type="button" class="btn btn-info btn-sm" onclick="imprimirTablaPDF('#tabla-listado','Clientes')"> Imprimir PDF</button>
+            <a href="clientes.php?action=create" class="btn btn-primary btn-sm">+ Nuevo</a>
+        </div>
     </div>
     <form class="search-bar" method="get">
         <input type="text" name="search" placeholder="Buscar nombre, RFC o email..." value="<?=h($search)?>">
         <button type="submit" class="btn btn-secondary btn-sm">Buscar</button>
     </form>
     <div class="table-wrapper">
-        <table>
+        <table id="tabla-listado">
             <tr><th>Codigo</th><th>Nombre</th><th>Tipo</th><th>RFC</th><th>Contacto</th><th>Email</th><th>Telefono</th><th>Pais</th><th>Activo</th><th>Acciones</th></tr>
             <?php foreach ($clientes as $c): ?>
             <tr>

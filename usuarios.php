@@ -111,10 +111,14 @@ if ($action === 'create' || $action === 'edit'):
 <div class="card">
     <div class="card-header">
         <h2>Usuarios</h2>
-        <a href="usuarios.php?action=create" class="btn btn-primary">+ Nuevo</a>
+        <div class="table-actions">
+            <button type="button" class="btn btn-success btn-sm" onclick="exportarTablaExcel('#tabla-listado','usuarios')"> Exportar Excel</button>
+            <button type="button" class="btn btn-info btn-sm" onclick="imprimirTablaPDF('#tabla-listado','Usuarios')"> Imprimir PDF</button>
+            <a href="usuarios.php?action=create" class="btn btn-primary btn-sm">+ Nuevo</a>
+        </div>
     </div>
     <div class="table-wrapper">
-        <table>
+        <table id="tabla-listado">
             <tr><th>Nombre</th><th>Email</th><th>Rol</th><th>Almacen</th><th>Ultimo acceso</th><th>Activo</th><th>Acciones</th></tr>
             <?php foreach ($usuarios as $u): ?>
             <tr>

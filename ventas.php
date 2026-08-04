@@ -579,14 +579,18 @@ function sumarSurtido(detalleId, requerido) {
 <div class="card">
     <div class="card-header">
         <h2>Ventas</h2>
-        <a href="ventas.php?action=create" class="btn btn-primary">+ Nueva</a>
+        <div class="table-actions">
+            <button type="button" class="btn btn-success btn-sm" onclick="exportarTablaExcel('#tabla-listado','ventas')"> Exportar Excel</button>
+            <button type="button" class="btn btn-info btn-sm" onclick="imprimirTablaPDF('#tabla-listado','Ventas')"> Imprimir PDF</button>
+            <a href="ventas.php?action=create" class="btn btn-primary btn-sm">+ Nueva</a>
+        </div>
     </div>
     <form class="search-bar" method="get">
         <input type="text" name="search" placeholder="Buscar folio o cliente..." value="<?=h($search)?>">
         <button type="submit" class="btn btn-secondary btn-sm">Buscar</button>
     </form>
     <div class="table-wrapper">
-        <table>
+        <table id="tabla-listado">
             <tr><th>Folio</th><th>Cliente</th><th>Almacen</th><th>Total</th><th>Forma pago</th><th>Estatus</th><th>Fecha</th><th>Acciones</th></tr>
             <?php foreach ($ventas as $v): ?>
             <tr>

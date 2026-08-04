@@ -151,9 +151,15 @@ require 'includes/header.php';
         </table>
     </form>
 
-    <h3 style="margin:16px 0 8px;">Ventas del periodo</h3>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px;">
+        <h3 style="margin:0;">Ventas del periodo</h3>
+        <div class="table-actions">
+            <button type="button" class="btn btn-success btn-sm" onclick="exportarTablaExcel('#tabla-ventas-periodo','ventas_periodo_<?=$anio?>-<?=$mes?>')"> Exportar Excel</button>
+            <button type="button" class="btn btn-info btn-sm" onclick="imprimirTablaPDF('#tabla-ventas-periodo','Ventas del periodo <?=$meses[$mes]?> <?=$anio?>')"> Imprimir PDF</button>
+        </div>
+    </div>
     <div class="table-wrapper">
-        <table>
+        <table id="tabla-ventas-periodo">
             <tr><th>Folio</th><th>Cliente</th><th>Subtotal</th><th>Descuento</th><th>IVA</th><th>Total</th><th>Fecha</th></tr>
             <?php $rows = $pdo->prepare("SELECT v.*, c.nombre as cliente FROM ventas v JOIN clientes c ON c.id=v.cliente_id WHERE v.estatus NOT IN ('cancelado') AND v.fecha_venta BETWEEN ? AND ? ORDER BY v.fecha_venta");
             $rows->execute([$fecha_inicio, $fecha_fin]);
@@ -171,9 +177,15 @@ require 'includes/header.php';
         </table>
     </div>
 
-    <h3 style="margin:16px 0 8px;">Compras del periodo</h3>
+    <div style="display:flex;justify-content:space-between;align-items:center;margin:16px 0 8px;">
+        <h3 style="margin:0;">Compras del periodo</h3>
+        <div class="table-actions">
+            <button type="button" class="btn btn-success btn-sm" onclick="exportarTablaExcel('#tabla-compras-periodo','compras_periodo_<?=$anio?>-<?=$mes?>')"> Exportar Excel</button>
+            <button type="button" class="btn btn-info btn-sm" onclick="imprimirTablaPDF('#tabla-compras-periodo','Compras del periodo <?=$meses[$mes]?> <?=$anio?>')"> Imprimir PDF</button>
+        </div>
+    </div>
     <div class="table-wrapper">
-        <table>
+        <table id="tabla-compras-periodo">
             <tr><th>Folio</th><th>Proveedor</th><th>Total</th><th>IVA estimado</th><th>Fecha</th></tr>
             <?php $rows = $pdo->prepare("SELECT c.*, p.nombre as proveedor FROM compras c JOIN proveedores p ON p.id=c.proveedor_id WHERE c.estatus NOT IN ('cancelada') AND c.fecha_compra BETWEEN ? AND ? ORDER BY c.fecha_compra");
             $rows->execute([$fecha_inicio, $fecha_fin]);

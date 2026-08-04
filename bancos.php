@@ -355,14 +355,18 @@ cambiarTipoMov();
 <div class="card">
     <div class="card-header">
         <h2>Cuentas Bancarias</h2>
-        <a href="bancos.php?action=create_cuenta" class="btn btn-primary">+ Nueva cuenta</a>
+        <div class="table-actions">
+            <button type="button" class="btn btn-success btn-sm" onclick="exportarTablaExcel('#tabla-listado','cuentas_bancarias')"> Exportar Excel</button>
+            <button type="button" class="btn btn-info btn-sm" onclick="imprimirTablaPDF('#tabla-listado','Cuentas Bancarias')"> Imprimir PDF</button>
+            <a href="bancos.php?action=create_cuenta" class="btn btn-primary btn-sm">+ Nueva cuenta</a>
+        </div>
     </div>
     <div class="card-grid" style="grid-template-columns:repeat(auto-fit,minmax(160px,1fr));margin-bottom:12px;">
         <div class="stat-card"><div class="number" style="font-size:1.4rem;"><?=count($cuentas)?></div><div class="label">Cuentas</div></div>
         <div class="stat-card"><div class="number" style="font-size:1.4rem;color:#5b9bd5;"><?=moneda($total_saldos)?></div><div class="label">Saldo total</div></div>
     </div>
     <div class="table-wrapper">
-        <table>
+        <table id="tabla-listado">
             <tr><th>Banco</th><th>Titular</th><th>Cuenta</th><th>Tipo</th><th>Moneda</th><th>Saldo</th><th>Movs</th><th>Activa</th><th>Acciones</th></tr>
             <?php if (!count($cuentas)): ?>
             <tr><td colspan="9" style="text-align:center;color:#999;padding:30px;">No hay cuentas registradas. <a href="bancos.php?action=create_cuenta">Crear primera cuenta</a></td></tr>

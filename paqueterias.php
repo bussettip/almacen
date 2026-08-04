@@ -124,8 +124,14 @@ require 'includes/header.php';
     </form>
 </div>
 <div class="card" style="margin-top:12px">
-    <div class="card-header"><h3>Zonas</h3></div>
-    <table>
+    <div class="card-header">
+        <h3>Zonas</h3>
+        <div class="table-actions">
+            <button type="button" class="btn btn-success btn-sm" onclick="exportarTablaExcel('#tabla-zonas','zonas')"> Exportar Excel</button>
+            <button type="button" class="btn btn-info btn-sm" onclick="imprimirTablaPDF('#tabla-zonas','Zonas de paqueteria')"> Imprimir PDF</button>
+        </div>
+    </div>
+    <table id="tabla-zonas">
         <tr><th>Nombre</th><th>Descripcion</th><th>Activo</th><th>Acciones</th></tr>
         <?php foreach($zonas as $z):?>
         <tr>
@@ -181,8 +187,14 @@ if ($action==='edit_paq'&&$id) { $stmt = $pdo->prepare("SELECT * FROM paqueteria
     </form>
 </div>
 <div class="card" style="margin-top:12px">
-    <div class="card-header"><h3>Paqueterias</h3></div>
-    <table>
+    <div class="card-header">
+        <h3>Paqueterias</h3>
+        <div class="table-actions">
+            <button type="button" class="btn btn-success btn-sm" onclick="exportarTablaExcel('#tabla-paqueterias','paqueterias')"> Exportar Excel</button>
+            <button type="button" class="btn btn-info btn-sm" onclick="imprimirTablaPDF('#tabla-paqueterias','Paqueterias')"> Imprimir PDF</button>
+        </div>
+    </div>
+    <table id="tabla-paqueterias">
         <tr><th>Nombre</th><th>Telefono</th><th>Sitio web</th><th>Activo</th><th>Acciones</th></tr>
         <?php foreach($paqueterias as $p):?>
         <tr>

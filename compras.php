@@ -530,14 +530,18 @@ function agregarFila() {
 <div class="card">
     <div class="card-header">
         <h2>Compras</h2>
-        <a href="compras.php?action=create" class="btn btn-primary">+ Nueva</a>
+        <div class="table-actions">
+            <button type="button" class="btn btn-success btn-sm" onclick="exportarTablaExcel('#tabla-listado','compras')"> Exportar Excel</button>
+            <button type="button" class="btn btn-info btn-sm" onclick="imprimirTablaPDF('#tabla-listado','Compras')"> Imprimir PDF</button>
+            <a href="compras.php?action=create" class="btn btn-primary btn-sm">+ Nueva</a>
+        </div>
     </div>
     <form class="search-bar" method="get">
         <input type="text" name="search" placeholder="Buscar folio o proveedor..." value="<?=h($search)?>">
         <button type="submit" class="btn btn-secondary btn-sm">Buscar</button>
     </form>
     <div class="table-wrapper">
-        <table>
+        <table id="tabla-listado">
             <tr><th>Folio</th><th>Proveedor</th><th>Almacen</th><th>Total</th><th>Forma pago</th><th>Estatus</th><th>Fecha</th><th>Acciones</th></tr>
             <?php foreach ($compras as $c): ?>
             <tr>
