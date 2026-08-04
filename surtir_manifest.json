@@ -1,0 +1,25 @@
+{
+  "name": "Surtir - Almacen",
+  "short_name": "Surtir",
+  "description": "App para surtir pedidos",
+  "start_url": "/surtir_app.php",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#1a1a2e",
+  "theme_color": "#1a1a2e",
+  "icons": [
+    {
+      "src": "/uploads/empresa/surtir_192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/uploads/empresa/surtir_512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ]
+}

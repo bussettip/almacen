@@ -1,0 +1,159 @@
+{
+  "name": "Alerta Stock Bajo (Diaria)",
+  "nodes": [
+    {
+      "id": "ea483e48-5c2c-4f79-bd0f-dbdf01bb6df5",
+      "name": "Iniciar manualmente",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [
+        0,
+        0
+      ],
+      "webhookId": "168be8fa142f4a33",
+      "parameters": {
+        "path": "4ba7fe2af5a2",
+        "responseMode": "lastNode",
+        "options": {}
+      }
+    },
+    {
+      "id": "f57fa3e8-6a6e-4a04-a3fc-d354dc1c0fd7",
+      "name": "Cada dia 8:00",
+      "type": "n8n-nodes-base.scheduleTrigger",
+      "typeVersion": 1,
+      "position": [
+        0,
+        300
+      ],
+      "parameters": {
+        "rule": {
+          "interval": [
+            {
+              "field": "cronExpression",
+              "expression": "0 8 * * *"
+            }
+          ]
+        }
+      }
+    },
+    {
+      "id": "55f85095-78bd-4a55-8e3d-7344e3987879",
+      "name": "Productos con stock bajo",
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2,
+      "position": [
+        300,
+        0
+      ],
+      "parameters": {
+        "operation": "executeQuery",
+        "query": "SELECT p.codigo, p.nombre, p.stock, p.stock_minimo, p.precio_compra, p.precio_venta, (p.stock * p.precio_compra) as valor_inventario, c.nombre as categoria FROM productos p LEFT JOIN categorias c ON c.id = p.categoria_id WHERE p.activo = 1 AND p.stock_minimo > 0 AND p.stock <= p.stock_minimo ORDER BY (p.stock_minimo - p.stock) DESC",
+        "additionalFields": {}
+      },
+      "credentials": {
+        "mySql": {
+          "id": null,
+          "name": "MySQL control_almacenes"
+        }
+      }
+    },
+    {
+      "id": "4a117c6f-414f-4d68-a98a-98e77ab14b6b",
+      "name": "Formatear email",
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        600,
+        0
+      ],
+      "parameters": {
+        "language": "javascript",
+        "code": "const items = $input.all();\nconst total = items.length;\nif (total === 0) {\n  return [{ json: { \n    subject: 'Sin productos con stock bajo', \n    html: '<p>Todos los productos estan dentro de su stock minimo.</p>', \n    text: 'Todos los productos estan dentro de su stock minimo.' \n  } }];\n}\nlet rows = items.map(p => {\n  const stock = Number(p.json.stock) || 0;\n  const min = Number(p.json.stock_minimo) || 0;\n  const falta = min - stock;\n  const color = falta > 0 ? '#fff3cd' : '#f8d7da';\n  return `<tr style=\"background:${color}\">\n    <td style=\"padding:6px 10px;border-bottom:1px solid #ddd;\">${p.json.codigo||''}</td>\n    <td style=\"padding:6px 10px;border-bottom:1px solid #ddd;\">${p.json.nombre||''}</td>\n    <td style=\"padding:6px 10px;border-bottom:1px solid #ddd;text-align:center;\">${p.json.categoria||'-'}</td>\n    <td style=\"padding:6px 10px;border-bottom:1px solid #ddd;text-align:center;font-weight:700;color:${falta>0?'#dc3545':'#ffc107'};\">${stock}</td>\n    <td style=\"padding:6px 10px;border-bottom:1px solid #ddd;text-align:center;\">${min}</td>\n    <td style=\"padding:6px 10px;border-bottom:1px solid #ddd;text-align:center;font-weight:700;color:#dc3545;\">${falta>0?falta:0}</td>\n    <td style=\"padding:6px 10px;border-bottom:1px solid #ddd;text-align:right;\">$${stock * (Number(p.json.precio_compra)||0)}</td>\n  </tr>`;\n}).join('');\nconst html = `<!DOCTYPE html><html><head><meta charset=\"utf-8\"></head><body style=\"font-family:Arial,sans-serif;font-size:14px;color:#333;\">\n  <h2 style=\"color:#dc3545;\">Alerta de Stock Bajo</h2>\n  <p>Se detectaron <strong>${total}</strong> producto(s) por debajo de su stock minimo:</p>\n  <table style=\"border-collapse:collapse;width:100%;max-width:800px;\">\n    <thead><tr style=\"background:#343a40;color:#fff;\">\n      <th style=\"padding:8px 10px;text-align:left;\">Codigo</th>\n      <th style=\"padding:8px 10px;text-align:left;\">Producto</th>\n      <th style=\"padding:8px 10px;text-align:center;\">Categoria</th>\n      <th style=\"padding:8px 10px;text-align:center;\">Stock</th>\n      <th style=\"padding:8px 10px;text-align:center;\">Minimo</th>\n      <th style=\"padding:8px 10px;text-align:center;\">Faltan</th>\n      <th style=\"padding:8px 10px;text-align:right;\">Valor</th>\n    </tr></thead>\n    <tbody>${rows}</tbody>\n  </table>\n  <p style=\"margin-top:16px;color:#666;font-size:12px;\">Reporte automatico generado por el sistema de almacen.</p>\n</body></html>`;\nconst text = `ALERTA DE STOCK BAJO\n\nSe detectaron ${total} producto(s):\n\n` +\n  items.map(p => `- ${p.json.codigo} ${p.json.nombre}: Stock ${p.json.stock} / Min ${p.json.stock_minimo}`).join('\n');\nreturn [{ json: { subject: `Stock Bajo - ${total} producto(s)`, html, text } }];"
+      }
+    },
+    {
+      "id": "5c8026b3-32f5-46ae-8af6-c66e6a87e0ac",
+      "name": "Enviar email",
+      "type": "n8n-nodes-base.emailSend",
+      "typeVersion": 1,
+      "position": [
+        900,
+        0
+      ],
+      "parameters": {
+        "fromEmail": "alertas@bussettip.com.mx",
+        "toEmail": "compras@bussettip.com.mx",
+        "subject": "={{ $json.subject }}",
+        "text": "={{ $json.text }}",
+        "htmlBody": "={{ $json.html }}",
+        "options": {}
+      },
+      "credentials": {
+        "smtp": {
+          "id": null,
+          "name": "SMTP"
+        }
+      }
+    }
+  ],
+  "connections": {
+    "Iniciar manualmente": {
+      "main": [
+        [
+          {
+            "node": "Productos con stock bajo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Cada dia 8:00": {
+      "main": [
+        [
+          {
+            "node": "Productos con stock bajo",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Productos con stock bajo": {
+      "main": [
+        [
+          {
+            "node": "Formatear email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Formatear email": {
+      "main": [
+        [
+          {
+            "node": "Enviar email",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "tags": [
+    {
+      "name": "almacen"
+    },
+    {
+      "name": "stock"
+    }
+  ],
+  "pinData": {}
+}

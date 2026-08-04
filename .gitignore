@@ -1,0 +1,14 @@
+# Dependencias (se regeneran con composer install en el servidor)
+/vendor/
+node_modules/
+
+# Bases de datos / respaldos
+*.sql
+*.zip
+*.tar.gz
+*.bak
+
+# Sistema
+.DS_Store
+Thumbs.db
+*.log

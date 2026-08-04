@@ -1,0 +1,135 @@
+services:
+  web:
+    image: php:8.2-apache
+    container_name: almacen_web
+    restart: unless-stopped
+    volumes:
+      - web-data:/var/www/html
+    ports:
+      - "8083:80"
+    environment:
+      DB_HOST: mysql_db1
+      DB_NAME: control_almacenes
+      DB_USER: root
+      DB_PASSWORD: Corporativo.2012
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - almacen-net
+    command: >
+      bash -c "
+      apt-get update &&
+      apt-get install -y libpng-dev libjpeg-dev libfreetype6-dev libzip-dev libcurl4-openssl-dev pkg-config unzip git &&
+      docker-php-ext-configure gd --with-freetype --with-jpeg &&
+      docker-php-ext-install -j$$(nproc) gd pdo pdo_mysql mysqli zip curl &&
+      a2enmod rewrite &&
+      curl -sS https://getcomposer.org/installer -o /tmp/composer-setup.php &&
+      php /tmp/composer-setup.php --install-dir=/usr/local/bin --filename=composer &&
+      composer install --working-dir=/var/www/html --no-dev --no-interaction --no-progress --prefer-dist &&
+      apache2-foreground
+      "
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql_db1
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: Corporativo.2012
+      MYSQL_DATABASE: myapp
+      MYSQL_USER: usuario
+      MYSQL_PASSWORD: Corporativo.2012
+    volumes:
+      - mysql-data:/var/lib/mysql
+    ports:
+      - "3206:3306"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-pCorporativo.2012"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - almacen-net
+
+  phpmyadmin:
+    image: phpmyadmin:latest
+    container_name: phpmyadmin1
+    restart: unless-stopped
+    ports:
+      - "8086:80"
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: Corporativo.2012
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - almacen-net
+
+  ftp:
+    image: stilliard/pure-ftpd
+    container_name: ftp_server_almacen
+    restart: unless-stopped
+    ports:
+      - "54022:21"
+      - "31000-31009:31000-31009"
+    volumes:
+      - web-data:/home/ftpusers/webuser
+      - ./ftp/passwd:/etc/pure-ftpd/passwd
+    environment:
+      PUBLICHOST: "localhost"
+      FTP_USER_NAME: pablo1
+      FTP_USER_PASS: Moliterno1
+      FTP_USER_HOME: /home/ftpusers/webuser
+    networks:
+      - almacen-net
+
+  nodered:
+    image: nodered/node-red:latest
+    container_name: nodered1
+    restart: unless-stopped
+    ports:
+      - "21000:1880"
+      - "21001:21001"
+      - "21002:21002/udp"
+    volumes:
+      - /root/nodered/data:/data
+    environment:
+      TZ: America/Argentina/Buenos_Aires
+      DB_HOST: mysql
+      DB_NAME: myapp
+      DB_USER: usuario
+      DB_PASSWORD: Corporativo.2012
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - almacen-net
+
+  caddy:
+    image: caddy:latest
+    container_name: caddy_almacen
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy:/etc/caddy
+      - caddy-data:/data
+      - caddy-config:/config
+    networks:
+      - almacen-net
+    depends_on:
+      - web
+
+volumes:
+  web-data:
+  mysql-data:
+  caddy-data:
+  caddy-config:
+
+networks:
+  almacen-net:
+    driver: bridge

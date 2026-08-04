@@ -1,0 +1,20 @@
+{
+    "name": "almacenes/control-almacenes",
+    "description": "Control de Almacenes - Descarga de CFDI del SAT",
+    "type": "project",
+    "license": "proprietary",
+    "require": {
+        "php": ">=8.2",
+        "phpcfdi/cfdi-sat-scraper": "^5.0",
+        "phpcfdi/image-captcha-resolver": "^0.3.0",
+        "guzzlehttp/guzzle": "^7.8",
+        "php-http/guzzle7-adapter": "^1.0",
+        "guzzlehttp/psr7": "^2.6"
+    },
+    "config": {
+        "optimize-autoloader": true,
+        "platform": {
+            "php": "8.2"
+        }
+    }
+}

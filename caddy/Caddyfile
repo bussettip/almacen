@@ -1,0 +1,3 @@
+almacen.bussettip.com.mx {
+    reverse_proxy web:80
+}
