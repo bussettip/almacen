@@ -85,20 +85,21 @@ function sat_descargar_recibidos(SatScraper $scraper, string $desde, string $has
 
     $lista = $scraper->listByPeriod($query);
 
-    $directorio = 'uploads/facturas_sat/' . date('Y-m');
-    if (!is_dir($directorio)) {
-        @mkdir($directorio, 0755, true);
+    $rel = 'uploads/facturas_sat/' . date('Y-m');
+    $dir = __DIR__ . '/../' . $rel;
+    if (!is_dir($dir)) {
+        @mkdir($dir, 0755, true);
     }
 
-    $scraper->resourceDownloader(ResourceType::xml(), $lista, 10)->saveTo($directorio, true, 0777);
-    $scraper->resourceDownloader(ResourceType::pdf(), $lista, 10)->saveTo($directorio, true, 0777);
+    $scraper->resourceDownloader(ResourceType::xml(), $lista, 10)->saveTo($dir, true, 0777);
+    $scraper->resourceDownloader(ResourceType::pdf(), $lista, 10)->saveTo($dir, true, 0777);
 
     $resultados = [];
     foreach ($lista as $metadata) {
         $m = $metadata->getData();
         $uuid = $m['uuid'] ?? '';
-        $m['archivo_xml'] = $uuid !== '' ? $directorio . '/' . $uuid . '.xml' : '';
-        $m['archivo_pdf'] = $uuid !== '' ? $directorio . '/' . $uuid . '.pdf' : '';
+        $m['archivo_xml'] = $uuid !== '' ? $rel . '/' . $uuid . '.xml' : '';
+        $m['archivo_pdf'] = $uuid !== '' ? $rel . '/' . $uuid . '.pdf' : '';
         $resultados[] = $m;
     }
     return $resultados;

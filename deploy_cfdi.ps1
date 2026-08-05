@@ -38,6 +38,7 @@ $files = @{
     "cfdi_descargar.php"       = "cfdi_descargar.php"
     "sat_descargar.php"        = "sat_descargar.php"
     "sat_descargar_zip.php"    = "sat_descargar_zip.php"
+    "sat_debug.php"            = "sat_debug.php"
     "facturas_sat.php"         = "facturas_sat.php"
     "includes\sat_helper.php"  = "includes/sat_helper.php"
     "factura.php"              = "factura.php"
