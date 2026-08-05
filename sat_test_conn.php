@@ -15,6 +15,7 @@ $urls = [
 foreach ($urls as $nombre => $url) {
     echo "== $nombre ==" . PHP_EOL;
     echo "URL: $url" . PHP_EOL;
+    require_once 'includes/sat_helper.php';
     $ch = curl_init($url);
     curl_setopt_array($ch, [
         CURLOPT_RETURNTRANSFER => true,
@@ -22,6 +23,7 @@ foreach ($urls as $nombre => $url) {
         CURLOPT_CONNECTTIMEOUT => 15,
         CURLOPT_FOLLOWLOCATION => true,
         CURLOPT_SSL_VERIFYPEER => true,
+        CURLOPT_CAINFO => sat_ca_bundle(),
         CURLOPT_SSL_CIPHER_LIST => 'DEFAULT@SECLEVEL=1',
         CURLOPT_HTTPHEADER => [
             'User-Agent: Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',

@@ -43,11 +43,50 @@ function sat_crear_scraper(string $rfc, string $ciec): SatScraper
         'curl' => [CURLOPT_SSL_CIPHER_LIST => 'DEFAULT@SECLEVEL=1'],
         'timeout' => 60,
         'connect_timeout' => 30,
+        // El portal CFDI no entrega el certificado intermedio (GlobalSign RSA OV SSL CA 2018);
+        // usar un bundle CA combinado (sistema + intermedio) para no fallar en TLS.
+        RequestOptions::VERIFY => sat_ca_bundle(),
     ]);
     $gateway = new SatHttpGateway($client, $cookieJar);
     $sessionManager->setHttpGateway($gateway);
 
     return new SatScraper($sessionManager, $gateway);
+}
+
+/**
+ * Devuelve la ruta a un bundle CA combinado (raices del sistema + el
+ * certificado intermedio GlobalSign que usa el portal CFDI del SAT).
+ * Lo genera la primera vez en uploads/ca_bundle_sat.pem.
+ */
+function sat_ca_bundle(): string
+{
+    $dir = __DIR__ . '/../uploads';
+    if (!is_dir($dir)) { @mkdir($dir, 0755, true); }
+    $destino = $dir . '/ca_bundle_sat.pem';
+
+    if (is_file($destino)) {
+        return $destino;
+    }
+
+    // 1) Certificado intermedio que viaja con la app
+    $gs = __DIR__ . '/sat_gs_ca.pem';
+    $contenido = is_file($gs) ? file_get_contents($gs) : '';
+
+    // 2) Raices del sistema (bundle de OpenSSL/cURL de la distro)
+    foreach (['/etc/ssl/certs/ca-certificates.crt', '/etc/pki/tls/certs/ca-bundle.crt'] as $sistema) {
+        if (is_file($sistema)) {
+            $contenido .= PHP_EOL . file_get_contents($sistema);
+            break;
+        }
+    }
+
+    // 3) Si no hay bundle del sistema, dejar la CA del sistema por defecto de PHP
+    if (trim($contenido) === '') {
+        return $destino;
+    }
+
+    @file_put_contents($destino, $contenido);
+    return $destino;
 }
 
 /**

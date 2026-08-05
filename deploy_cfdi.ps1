@@ -45,6 +45,7 @@ $files = @{
     "sat_cert_chain.php"       = "sat_cert_chain.php"
     "facturas_sat.php"         = "facturas_sat.php"
     "includes\sat_helper.php"  = "includes/sat_helper.php"
+    "includes\sat_gs_ca.pem"   = "includes/sat_gs_ca.pem"
     "factura.php"              = "factura.php"
     "prefactura.php"           = "prefactura.php"
     "composer.json"            = "composer.json"
