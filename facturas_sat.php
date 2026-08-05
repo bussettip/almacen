@@ -146,10 +146,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         } catch (CiecLoginException $e) {
+            // Diagnosticar la respuesta del SAT: si no trae captcha es probable bloqueo por intentos
+            $html = $e->getContents();
+            $msg = $e->getMessage();
+            if (stripos($html, 'divCaptcha') === false) {
+                $msg .= ' | La pagina del SAT no mostro captcha: posible bloqueo temporal por varios intentos. Espera 10-30 min y reintenta, o usa otra IP.';
+            }
             if ($mostrar_captcha && !empty($_SESSION['sat_captcha_image'])) {
                 $error = 'El captcha o la clave CIEC son incorrectos. Intenta de nuevo.';
             } else {
-                $error = 'No se pudo iniciar sesion en el SAT: ' . $e->getMessage();
+                $error = 'No se pudo iniciar sesion en el SAT: ' . $msg;
             }
         } catch (Throwable $e) {
             $error = 'Error al descargar: ' . $e->getMessage();
