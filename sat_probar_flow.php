@@ -1,6 +1,6 @@
 <?php
 // Diagnostico real del flujo SAT: reproduce el login/captcha que usa facturas_sat.php
-// y muestra el error exacto. No descarga, solo prueba hasta obtener el captcha.
+// y muestra el error exacto en texto claro. Guarda la respuesta del SAT en un archivo.
 require 'includes/auth.php';
 verificarPermiso('facturas_sat');
 $titulo = 'Diagnostico real del flujo SAT';
@@ -8,7 +8,9 @@ $titulo = 'Diagnostico real del flujo SAT';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $rfc = trim($_POST['rfc'] ?? '');
     $ciec = trim($_POST['ciec'] ?? '');
-    echo '<h3>Resultado</h3><pre style="font-size:.8rem;max-height:500px;overflow:auto;background:#222;color:#7fdb7f;padding:12px;border-radius:8px;">';
+
+    echo '<h3>Resultado</h3><div style="background:#fff;border:1px solid #ccc;border-radius:8px;padding:12px;font-family:monospace;font-size:.85rem;line-height:1.5;overflow:auto;">';
+
     if ($rfc === '' || $ciec === '') {
         echo "RFC o CIEC vacios.\n";
     } else {
@@ -24,15 +26,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             echo "NOTA: el login del SAT funciona. El captcha SI se puede obtener.\n";
         } catch (Throwable $e) {
             echo "ERROR en flujo:\n";
-            echo get_class($e) . ": " . $e->getMessage() . "\n\n";
+            echo "Tipo: " . get_class($e) . "\n";
+            echo "Mensaje: " . $e->getMessage() . "\n\n";
+
             if (method_exists($e, 'getContents')) {
                 $c = $e->getContents();
-                echo "Contenido de la respuesta del SAT:\n";
-                echo (is_string($c) ? $c : json_encode($c)) . "\n";
+                if (is_string($c)) {
+                    // Guardar la respuesta completa en un archivo para poder leerla
+                    $arch = 'uploads/sat_respuesta_debug.txt';
+                    file_put_contents(__DIR__ . '/' . $arch, $c);
+                    echo "La respuesta del SAT se guardo en: " . $arch . "\n";
+                    echo "Puedes abrirla en: <a href='$arch' target='_blank'>$arch</a>\n\n";
+
+                    $txt = trim(strip_tags($c));
+                    $txt = preg_replace('/\s+/', ' ', $txt);
+                    echo "Contenido visible (texto plano, primeros 1000 chars):\n";
+                    echo mb_substr($txt, 0, 1000) . "\n";
+                }
+            }
+            if (method_exists($e, 'getHttpStatusCode')) {
+                echo "\nHTTP status: " . $e->getHttpStatusCode() . "\n";
             }
         }
     }
-    echo '</pre>';
+    echo '</div>';
     exit;
 }
 require 'includes/header.php';
