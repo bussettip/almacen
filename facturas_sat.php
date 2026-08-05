@@ -44,6 +44,9 @@ try {
     } catch (Throwable $e2) {}
 }
 
+// Migracion: columna archivo_pdf (para guardar el PDF descargado del SAT)
+try { $pdo->exec("ALTER TABLE sat_cfdi ADD COLUMN archivo_pdf VARCHAR(255) DEFAULT NULL"); } catch (Throwable $e) {}
+
 $cfg = $pdo->query("SELECT rfc FROM config_empresa WHERE id=1")->fetch();
 $rfc_empresa = $cfg ? trim((string)($cfg['rfc'] ?? '')) : '';
 
@@ -115,10 +118,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     $vinculados = 0;
                     foreach ($descargados as $m) {
                         $uuid = $m['uuid'] ?? '';
-                        $archivo = $uuid !== '' ? 'uploads/facturas_sat/' . date('Y-m') . '/' . $uuid . '.xml' : '';
+                        $archivo = $m['archivo_xml'] ?? '';
+                        $archivo_pdf = $m['archivo_pdf'] ?? '';
                         if (!file_exists($archivo)) { $archivo = ''; }
+                        if (!file_exists($archivo_pdf)) { $archivo_pdf = ''; }
 
-                        if (sat_registrar_cfdi($m, $archivo)) {
+                        if (sat_registrar_cfdi($m, $archivo, $archivo_pdf)) {
                             $compraId = sat_buscar_compra(
                                 $m['rfcEmisor'] ?? '',
                                 $m['fechaEmision'] ?? '',
@@ -246,6 +251,7 @@ require 'includes/header.php';
                 <th>Total</th>
                 <th>Estado</th>
                 <th>Vinculo</th>
+                <th>Archivos</th>
             </tr>
             <?php foreach ($recientes as $r): ?>
             <tr>
@@ -260,6 +266,17 @@ require 'includes/header.php';
                         <a href="compras.php?action=detalle&id=<?=(int)$r['compra_id']?>">Compra <?=h($r['compra_folio'] ?: $r['compra_id'])?></a>
                     <?php else: ?>
                         <span style="color:#999;">Sin vinculo</span>
+                    <?php endif; ?>
+                </td>
+                <td>
+                    <?php if ($r['archivo']): ?>
+                        <a href="sat_descargar.php?id=<?=(int)$r['id']?>&tipo=xml" class="btn btn-sm btn-info" title="Descargar XML">XML</a>
+                    <?php endif; ?>
+                    <?php if ($r['archivo_pdf']): ?>
+                        <a href="sat_descargar.php?id=<?=(int)$r['id']?>&tipo=pdf" class="btn btn-sm btn-danger" title="Descargar PDF">PDF</a>
+                    <?php endif; ?>
+                    <?php if (!$r['archivo'] && !$r['archivo_pdf']): ?>
+                        <span style="color:#999;">-</span>
                     <?php endif; ?>
                 </td>
             </tr>

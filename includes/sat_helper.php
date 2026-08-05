@@ -70,7 +70,8 @@ function sat_enviar_captcha(SatScraper $scraper, string $respuesta): void
 
 /**
  * Descarga los CFDI recibidos del periodo (la sesion ya debe estar iniciada).
- * Guarda los XML en uploads/facturas_sat/ y devuelve los metadatos.
+ * Guarda los XML y PDF en uploads/facturas_sat/ y devuelve los metadatos
+ * con las rutas de cada archivo (archivo_xml / archivo_pdf).
  *
  * @return array<int, array<string, string>>
  */
@@ -90,10 +91,15 @@ function sat_descargar_recibidos(SatScraper $scraper, string $desde, string $has
     }
 
     $scraper->resourceDownloader(ResourceType::xml(), $lista, 10)->saveTo($directorio, true, 0777);
+    $scraper->resourceDownloader(ResourceType::pdf(), $lista, 10)->saveTo($directorio, true, 0777);
 
     $resultados = [];
     foreach ($lista as $metadata) {
-        $resultados[] = $metadata->getData();
+        $m = $metadata->getData();
+        $uuid = $m['uuid'] ?? '';
+        $m['archivo_xml'] = $uuid !== '' ? $directorio . '/' . $uuid . '.xml' : '';
+        $m['archivo_pdf'] = $uuid !== '' ? $directorio . '/' . $uuid . '.pdf' : '';
+        $resultados[] = $m;
     }
     return $resultados;
 }
@@ -102,7 +108,7 @@ function sat_descargar_recibidos(SatScraper $scraper, string $desde, string $has
  * Registra un CFDI descargado en la tabla sat_cfdi evitando duplicados.
  * Devuelve true si se inserto, false si el UUID ya existia.
  */
-function sat_registrar_cfdi(array $m, string $archivo): bool
+function sat_registrar_cfdi(array $m, string $archivo, string $archivoPdf = ''): bool
 {
     global $pdo;
     $uuid = $m['uuid'] ?? '';
@@ -115,8 +121,8 @@ function sat_registrar_cfdi(array $m, string $archivo): bool
         return false;
     }
     $stmt = $pdo->prepare(
-        "INSERT INTO sat_cfdi (uuid, rfc_emisor, nombre_emisor, rfc_receptor, nombre_receptor, fecha_emision, total, estado, archivo, usuario_id)
-         VALUES (?,?,?,?,?,?,?,?,?,?)"
+        "INSERT INTO sat_cfdi (uuid, rfc_emisor, nombre_emisor, rfc_receptor, nombre_receptor, fecha_emision, total, estado, archivo, archivo_pdf, usuario_id)
+         VALUES (?,?,?,?,?,?,?,?,?,?,?)"
     );
     $fecha = substr((string)($m['fechaEmision'] ?? ''), 0, 10);
     $fecha = $fecha !== '' ? $fecha : null;
@@ -130,6 +136,7 @@ function sat_registrar_cfdi(array $m, string $archivo): bool
         isset($m['total']) ? (float)$m['total'] : 0,
         $m['estadoComprobante'] ?? '',
         $archivo,
+        $archivoPdf,
         $_SESSION['usuario_id'] ?? null,
     ]);
     return true;
