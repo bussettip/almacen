@@ -15,6 +15,18 @@ if (is_dir($dir_base)) {
 }
 sort($contenido);
 
+// Existencia de la tabla y conteos
+$tabla_existe = false;
+$total_regs = 0;
+$xml_existentes = 0;
+$pdf_existentes = 0;
+try {
+    $tabla_existe = $pdo->query("SELECT COUNT(*) FROM sat_cfdi") !== false;
+    $total_regs = (int)$pdo->query("SELECT COUNT(*) FROM sat_cfdi")->fetchColumn();
+    $xml_existentes = (int)$pdo->query("SELECT COUNT(*) FROM sat_cfdi WHERE archivo IS NOT NULL AND archivo != '' AND archivo IS NOT NULL")->fetchColumn();
+    $pdf_existentes = (int)$pdo->query("SELECT COUNT(*) FROM sat_cfdi WHERE archivo_pdf IS NOT NULL AND archivo_pdf != ''")->fetchColumn();
+} catch (Throwable $e) {}
+
 $regs = $pdo->query("SELECT id, uuid, fecha_emision, archivo, archivo_pdf FROM sat_cfdi ORDER BY id DESC LIMIT 20")->fetchAll();
 
 require 'includes/header.php';
@@ -36,6 +48,12 @@ require 'includes/header.php';
 </div>
 <div class="card">
     <div class="card-header"><h2>Registros en BD (sat_cfdi)</h2></div>
+    <div style="padding:16px;">
+        <p><strong>Tabla sat_cfdi existe:</strong> <?=$tabla_existe ? 'SI' : 'NO'?></p>
+        <p><strong>Total registros:</strong> <?=$total_regs?></p>
+        <p><strong>Con archivo XML registrado:</strong> <?=$xml_existentes?></p>
+        <p><strong>Con archivo PDF registrado:</strong> <?=$pdf_existentes?></p>
+    </div>
     <div class="table-wrapper">
         <table>
             <tr><th>ID</th><th>UUID</th><th>Fecha</th><th>archivo</th><th>archivo_pdf</th><th>Existe XML</th><th>Existe PDF</th></tr>
