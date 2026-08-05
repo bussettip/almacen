@@ -116,6 +116,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     unset($_SESSION['sat_captcha_espera'], $_SESSION['sat_captcha_image'], $_SESSION['sat_captcha_mime']);
 
                     $vinculados = 0;
+                    $insertados = [];
                     foreach ($descargados as $m) {
                         $uuid = $m['uuid'] ?? '';
                         $archivo = $m['archivo_xml'] ?? '';
@@ -124,6 +125,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         if ($archivo_pdf !== '' && !file_exists(__DIR__ . '/' . $archivo_pdf)) { $archivo_pdf = ''; }
 
                         if (sat_registrar_cfdi($m, $archivo, $archivo_pdf)) {
+                            $idNuevo = (int)$pdo->lastInsertId();
+                            $insertados[] = [
+                                'id' => $idNuevo,
+                                'uuid' => $uuid,
+                                'nombre_emisor' => $m['nombreEmisor'] ?? '',
+                                'rfc_emisor' => $m['rfcEmisor'] ?? '',
+                                'fecha_emision' => substr((string)($m['fechaEmision'] ?? ''), 0, 10),
+                                'total' => isset($m['total']) ? (float)$m['total'] : 0,
+                                'estado' => $m['estadoComprobante'] ?? '',
+                                'archivo' => $archivo,
+                                'archivo_pdf' => $archivo_pdf,
+                            ];
                             $compraId = sat_buscar_compra(
                                 $m['rfcEmisor'] ?? '',
                                 $m['fechaEmision'] ?? '',
@@ -237,6 +250,46 @@ require 'includes/header.php';
     </p>
     <?php endif; ?>
 </div>
+
+<?php if (!empty($insertados)): ?>
+<div class="card">
+    <div class="card-header"><h2>Recien descargados (<?=count($insertados)?>)</h2></div>
+    <div class="table-wrapper">
+        <table id="tabla-descargados">
+            <tr>
+                <th>UUID</th>
+                <th>Emisor</th>
+                <th>RFC</th>
+                <th>Fecha</th>
+                <th>Total</th>
+                <th>Estado</th>
+                <th>Descargar</th>
+            </tr>
+            <?php foreach ($insertados as $r): ?>
+            <tr>
+                <td style="font-size:.75rem;"><?=h($r['uuid'])?></td>
+                <td><?=h($r['nombre_emisor'] ?: '-')?></td>
+                <td><?=h($r['rfc_emisor'] ?: '-')?></td>
+                <td><?=h($r['fecha_emision'] ?? '-')?></td>
+                <td><?=moneda($r['total'])?></td>
+                <td><?=h($r['estado'] ?: '-')?></td>
+                <td>
+                    <?php if ($r['archivo']): ?>
+                        <a href="sat_descargar.php?id=<?=(int)$r['id']?>&tipo=xml" class="btn btn-sm btn-info" title="Descargar XML">XML</a>
+                    <?php endif; ?>
+                    <?php if ($r['archivo_pdf']): ?>
+                        <a href="sat_descargar.php?id=<?=(int)$r['id']?>&tipo=pdf" class="btn btn-sm btn-danger" title="Descargar PDF">PDF</a>
+                    <?php endif; ?>
+                    <?php if (!$r['archivo'] && !$r['archivo_pdf']): ?>
+                        <span style="color:#999;">Sin archivos</span>
+                    <?php endif; ?>
+                </td>
+            </tr>
+            <?php endforeach; ?>
+        </table>
+    </div>
+</div>
+<?php endif; ?>
 
 <?php if ($recientes): ?>
 <div class="card">
