@@ -9,6 +9,26 @@ $remote = "root@86.38.205.231"
 $container = "almacen_web"
 $cmd = "docker exec -i -u root $container tee /var/www/html/{0} > /dev/null"
 
+# ssh no esta garantizado en el PATH ni en System32 si PowerShell es de 32 bits.
+# Probar rutas conocidas (Sysnative da acceso a la carpeta real de 64 bits desde x86).
+$ssh = $null
+$candidatos = @(
+    "C:\Windows\System32\OpenSSH\ssh.exe",
+    "C:\Windows\Sysnative\OpenSSH\ssh.exe"
+)
+foreach ($c in $candidatos) {
+    if (Test-Path $c) { $ssh = $c; break }
+}
+if (-not $ssh) {
+    $cmd = Get-Command ssh -ErrorAction SilentlyContinue
+    if ($cmd) { $ssh = $cmd.Source }
+}
+if (-not $ssh) {
+    Write-Host "No se encontro ssh.exe. Instala el cliente OpenSSH (App Opciones) o indica la ruta en el script." -ForegroundColor Red
+    exit 1
+}
+Write-Host "Usando ssh: $ssh"
+
 # Archivos del modulo CFDI: origen local -> destino en el contenedor
 $files = @{
     "configuracion.php"        = "configuracion.php"
@@ -26,22 +46,32 @@ Write-Host "== Copiando archivos al contenedor $container =="
 foreach ($f in $files.Keys) {
     $dest = $files[$f]
     Write-Host "-> $dest"
-    Get-Content $f -Raw | ssh $remote ($cmd -f $dest)
+    Get-Content $f -Raw | & $ssh $remote ($cmd -f $dest)
     if ($LASTEXITCODE -ne 0) { Write-Host "ERROR al copiar $dest" -ForegroundColor Red; exit 1 }
 }
 
-Write-Host "== Instalando extensiones soap/xsl y creando directorios =="
-$setup = "docker exec -u root $container bash -lc 'apt-get update -qq && apt-get install -y -qq libxml2-dev libxslt1-dev >/dev/null 2>&1 && docker-php-ext-install soap xsl >/dev/null 2>&1 && docker-php-ext-enable soap xsl >/dev/null 2>&1 && mkdir -p /var/www/html/uploads/csd /var/www/html/uploads/cfdi && chown -R www-data:www-data /var/www/html/uploads && apachectl restart >/dev/null 2>&1'"
-ssh $remote $setup
-if ($LASTEXITCODE -ne 0) { Write-Host "ERROR en el setup de extensiones" -ForegroundColor Red; exit 1 }
+Write-Host "== Instalando extensiones soap/xsl (ver salida) =="
+$installExt = "docker exec -u root $container bash -c 'apt-get update -qq && apt-get install -y -qq libxml2-dev libxslt1-dev && docker-php-ext-install soap xsl && docker-php-ext-enable soap xsl'"
+& $ssh $remote $installExt
+if ($LASTEXITCODE -ne 0) { Write-Host "ERROR instalando extensiones" -ForegroundColor Red; exit 1 }
+
+Write-Host "== Creando directorios CFDI y permisos =="
+$dirs = "docker exec -u root $container bash -c 'mkdir -p /var/www/html/uploads/csd /var/www/html/uploads/cfdi && chown -R www-data:www-data /var/www/html/uploads'"
+& $ssh $remote $dirs
+if ($LASTEXITCODE -ne 0) { Write-Host "ERROR creando directorios" -ForegroundColor Red; exit 1 }
+
+Write-Host "== Recargando Apache para cargar soap/xsl =="
+$reload = "docker exec -u root $container apachectl graceful"
+& $ssh $remote $reload
+Write-Host "(si la recarga falla, la extension se carga al reiniciar el contenedor)"
 
 Write-Host "== composer install (instala cfdiutils/credentials/finkok) =="
-ssh $remote "docker exec -u root $container composer install --working-dir=/var/www/html --no-dev --no-interaction --no-progress --prefer-dist"
+& $ssh $remote "docker exec -u root $container composer install --working-dir=/var/www/html --no-dev --no-interaction --no-progress --prefer-dist"
 if ($LASTEXITCODE -ne 0) { Write-Host "ERROR en composer install" -ForegroundColor Red; exit 1 }
 
 Write-Host "== Verificacion de extensiones y dependencias =="
-ssh $remote "docker exec $container php -m | grep -iE 'soap|xsl'"
-ssh $remote "docker exec $container php -r 'require \"/var/www/html/vendor/autoload.php\"; echo \"Finkok/cfdi SDK OK\n\";'"
+& $ssh $remote "docker exec $container php -m | grep -iE 'soap|xsl'"
+& $ssh $remote "docker exec $container ls /var/www/html/vendor/autoload.php"
 
 Write-Host ""
 Write-Host "Despliegue CFDI completado." -ForegroundColor Green
