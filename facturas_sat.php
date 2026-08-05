@@ -120,8 +120,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                         $uuid = $m['uuid'] ?? '';
                         $archivo = $m['archivo_xml'] ?? '';
                         $archivo_pdf = $m['archivo_pdf'] ?? '';
-                        if (!file_exists($archivo)) { $archivo = ''; }
-                        if (!file_exists($archivo_pdf)) { $archivo_pdf = ''; }
+                        if ($archivo !== '' && !file_exists(__DIR__ . '/' . $archivo)) { $archivo = ''; }
+                        if ($archivo_pdf !== '' && !file_exists(__DIR__ . '/' . $archivo_pdf)) { $archivo_pdf = ''; }
 
                         if (sat_registrar_cfdi($m, $archivo, $archivo_pdf)) {
                             $compraId = sat_buscar_compra(
