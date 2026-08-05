@@ -1,6 +1,18 @@
 <?php
 require_once __DIR__ . '/../vendor/autoload.php';
 
+/**
+ * Registro de auditoria del flujo SAT. Escribe en uploads/sat_log.txt
+ * para diagnosticar paso a paso que hace el SAT.
+ */
+function sat_log(string $msg): void
+{
+    $dir = __DIR__ . '/../uploads';
+    if (!is_dir($dir)) { @mkdir($dir, 0755, true); }
+    $linea = '[' . date('Y-m-d H:i:s') . '] ' . $msg . PHP_EOL;
+    @file_put_contents($dir . '/sat_log.txt', $linea, FILE_APPEND);
+}
+
 use GuzzleHttp\Client;
 use GuzzleHttp\Cookie\SessionCookieJar;
 use GuzzleHttp\RequestOptions;
@@ -84,6 +96,7 @@ function sat_descargar_recibidos(SatScraper $scraper, string $desde, string $has
     );
 
     $lista = $scraper->listByPeriod($query);
+    sat_log("listByPeriod OK - CFDI encontrados: " . count($lista) . " (desde=$desde hasta=$hasta)");
 
     $rel = 'uploads/facturas_sat/' . date('Y-m');
     $dir = __DIR__ . '/../' . $rel;
@@ -93,6 +106,7 @@ function sat_descargar_recibidos(SatScraper $scraper, string $desde, string $has
 
     $scraper->resourceDownloader(ResourceType::xml(), $lista, 10)->saveTo($dir, true, 0777);
     $scraper->resourceDownloader(ResourceType::pdf(), $lista, 10)->saveTo($dir, true, 0777);
+    sat_log("Descarga XML/PDF completada en $dir");
 
     $resultados = [];
     foreach ($lista as $metadata) {

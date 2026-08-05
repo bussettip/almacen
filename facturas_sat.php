@@ -80,11 +80,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $scraper = null;
         try {
             $scraper = sat_crear_scraper($rfc_empresa, $ciec);
+            sat_log("Scraper creado para RFC=$rfc_empresa");
 
             // PASO 1: no hay respuesta de captcha aun -> pedir el captcha
             if (empty($_SESSION['sat_captcha_espera'])) {
                 if ($captcha === '') {
                     $img = sat_obtener_captcha($scraper);
+                    sat_log("Captcha solicitado OK (mime=" . $img->getMimeType() . ")");
                     $_SESSION['sat_captcha_espera'] = true;
                     $_SESSION['sat_captcha_image'] = $img->asBase64();
                     $_SESSION['sat_captcha_mime'] = $img->getMimeType();
@@ -105,7 +107,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 } else {
                     try {
                         sat_enviar_captcha($scraper, $captcha);
+                        sat_log("Captcha enviado y sesion iniciada");
                     } catch (CiecLoginException $e) {
+                        sat_log("Captcha rechazado por el SAT: " . $e->getMessage());
                         unset($_SESSION['sat_captcha_espera'], $_SESSION['sat_captcha_image'], $_SESSION['sat_captcha_mime']);
                         throw $e;
                     }
@@ -126,6 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
                         if (sat_registrar_cfdi($m, $archivo, $archivo_pdf)) {
                             $idNuevo = (int)$pdo->lastInsertId();
+                            sat_log("Insertado CFDI id=$idNuevo uuid=$uuid archivo=$archivo pdf=$archivo_pdf");
                             $insertados[] = [
                                 'id' => $idNuevo,
                                 'uuid' => $uuid,
@@ -159,6 +164,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 }
             }
         } catch (CiecLoginException $e) {
+            sat_log("CiecLoginException: " . $e->getMessage());
             // Diagnosticar la respuesta del SAT: si no trae captcha es probable bloqueo por intentos
             $html = $e->getContents();
             $msg = $e->getMessage();
@@ -171,6 +177,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $error = 'No se pudo iniciar sesion en el SAT: ' . $msg;
             }
         } catch (Throwable $e) {
+            sat_log("Error general: " . get_class($e) . ": " . $e->getMessage());
             $error = 'Error al descargar: ' . $e->getMessage();
         }
     }
