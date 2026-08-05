@@ -1,28 +1,45 @@
 <?php
-$titulo = 'Prefactura';
+$titulo = 'Factura';
 require 'includes/auth.php';
+require_once 'includes/cfdi_helper.php';
 
-$empresa = $pdo->query("SELECT * FROM config_empresa WHERE id=1")->fetch();
-$empresa_nombre = $empresa['nombre'] ?? 'Control de Almacenes';
-$empresa_logo = $empresa && $empresa['logo'] && file_exists(__DIR__.'/uploads/empresa/'.$empresa['logo']) ? 'uploads/empresa/'.$empresa['logo'] : '';
-$empresa_datos = array_filter([$empresa['direccion'] ?? null, $empresa['telefono'] ?? null, $empresa['email'] ?? null]);
+$id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+if (!$id) { alert('danger', 'Factura no especificada'); redirect('ventas.php'); }
 
-$venta_id = isset($_GET['venta_id']) ? (int)$_GET['venta_id'] : 0;
-if (!$venta_id) { alert('danger', 'Venta no especificada'); redirect('ventas.php'); }
+$factura = $pdo->prepare("SELECT * FROM facturas_emitidas WHERE id=?");
+$factura->execute([$id]); $factura = $factura->fetch();
+if (!$factura) { alert('danger', 'Factura no encontrada'); redirect('ventas.php'); }
+if ($factura['estatus'] !== 'timbrado') { alert('warning', 'Esta factura aun no esta timbrada'); redirect('ventas.php'); }
 
 $venta = $pdo->prepare("SELECT v.*, c.nombre as cliente, c.rfc, c.direccion, c.ciudad, c.estado, c.pais, c.email, a.nombre as almacen, u.nombre as usuario FROM ventas v JOIN clientes c ON c.id=v.cliente_id JOIN almacenes a ON a.id=v.almacen_id JOIN usuarios u ON u.id=v.usuario_id WHERE v.id=?");
-$venta->execute([$venta_id]); $venta = $venta->fetch();
+$venta->execute([$factura['venta_id']]); $venta = $venta->fetch();
 if (!$venta) { alert('danger', 'Venta no encontrada'); redirect('ventas.php'); }
 
 $detalles = $pdo->prepare("SELECT d.*, p.codigo, p.nombre as producto, um.codigo as umedida FROM venta_detalle d JOIN productos p ON p.id=d.producto_id JOIN unidades_medida um ON um.id=p.unidad_medida_id WHERE d.venta_id=?");
-$detalles->execute([$venta_id]);
+$detalles->execute([$factura['venta_id']]);
+
+$empresa = $pdo->query("SELECT * FROM config_empresa WHERE id=1")->fetch();
+$empresa_nombre = $empresa['razon_social'] ?: ($empresa['nombre'] ?? 'Control de Almacenes');
+$empresa_logo = $empresa && $empresa['logo'] && file_exists(__DIR__.'/uploads/empresa/'.$empresa['logo']) ? 'uploads/empresa/'.$empresa['logo'] : '';
+$empresa_datos = array_filter([$empresa['rfc'] ?? null, $empresa['direccion'] ?? null, $empresa['telefono'] ?? null, $empresa['email'] ?? null]);
+
+$xml_path = __DIR__.'/uploads/cfdi/'.$factura['xml_path'];
+$fecha_timbrado = null;
+if (file_exists($xml_path)) {
+    $xmlDoc = @simplexml_load_file($xml_path);
+    if ($xmlDoc) {
+        $xmlDoc->registerXPathNamespace('tfd', 'http://www.sat.gob.mx/TimbreFiscalDigital');
+        $tfd = $xmlDoc->xpath('//tfd:TimbreFiscalDigital');
+        if ($tfd) { $fecha_timbrado = (string)$tfd[0]['FechaTimbrado']; }
+    }
+}
 
 ?>
 <!DOCTYPE html>
 <html lang="es">
 <head>
     <meta charset="UTF-8">
-    <title>Prefactura - <?=h($venta['folio'])?></title>
+    <title>Factura - <?=h($factura['serie'] ?? '')?><?=h($factura['folio'] ?? '')?></title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Segoe UI', Arial, sans-serif; background: #eef2f7; padding: 40px; }
@@ -40,6 +57,8 @@ $detalles->execute([$venta_id]);
         .total-wrap { padding: 20px 30px; margin-left: auto; width: 300px; }
         .total-wrap tr td { border: none; padding: 6px 0; }
         .total-wrap .grand td { font-size: 1.1rem; font-weight: 700; color: #5b9bd5; border-top: 2px solid #5b9bd5; padding-top: 8px; }
+        .cfdi-data { background: #f8fafc; padding: 16px 30px; border-top: 2px solid #eef2f7; font-size: .8rem; color: #444; }
+        .cfdi-data div { margin-bottom: 2px; }
         .footer { text-align: center; padding: 20px; color: #a0aab8; font-size: .8rem; border-top: 1px solid #e8ecf1; }
         .actions { text-align: center; padding: 20px; }
         .btn { display: inline-block; padding: 10px 24px; background: #5b9bd5; color: #fff; border: none; border-radius: 6px; font-size: .9rem; cursor: pointer; text-decoration: none; }
@@ -55,8 +74,8 @@ $detalles->execute([$venta_id]);
     <div class="invoice">
         <div class="header">
             <div>
-                <h1>Prefactura</h1>
-                <div class="folio">Folio: <?=h($venta['folio'])?></div>
+                <h1>Factura</h1>
+                <div class="folio">Folio: <?=h($factura['serie'] ?? '')?><?=h($factura['folio'] ?? '')?></div>
             </div>
             <div style="text-align:right;">
                 <div style="display:flex;align-items:center;justify-content:flex-end;gap:14px;">
@@ -65,7 +84,7 @@ $detalles->execute([$venta_id]);
                     <?php endif; ?>
                     <div style="text-align:right;">
                         <div style="font-size:1.1rem;font-weight:700;"><?=h($empresa_nombre)?></div>
-                        <div style="font-size:.85rem;opacity:.8;"><?=h($venta['fecha_venta'])?></div>
+                        <div style="font-size:.85rem;opacity:.8;"><?=h($factura['created_at'])?></div>
                     </div>
                 </div>
                 <?php foreach ($empresa_datos as $d): ?>
@@ -111,8 +130,15 @@ $detalles->execute([$venta_id]);
                 <tr><td>Subtotal</td><td style="text-align:right;"><?=moneda($venta['subtotal'])?></td></tr>
                 <tr><td>Descuento</td><td style="text-align:right;"><?=moneda($venta['descuento'])?></td></tr>
                 <tr><td>IVA (16%)</td><td style="text-align:right;"><?=moneda($venta['impuesto'])?></td></tr>
-                <tr class="grand"><td>Total</td><td style="text-align:right;"><?=moneda($venta['total'])?></td></tr>
+                <tr class="grand"><td>Total</td><td style="text-align:right;"><?=moneda($factura['total'] ?? $venta['total'])?></td></tr>
             </table>
+        </div>
+
+        <div class="cfdi-data">
+            <div><strong>UUID:</strong> <?=h($factura['uuid'])?></div>
+            <div><strong>Rfc receptor:</strong> <?=h($factura['rfc_receptor'])?></div>
+            <?php if ($fecha_timbrado): ?><div><strong>Timbrado:</strong> <?=h($fecha_timbrado)?></div><?php endif; ?>
+            <div><strong>Serie-Folio:</strong> <?=h($factura['serie'] ?? '')?>-<?=h($factura['folio'] ?? '')?></div>
         </div>
 
         <div class="footer">
@@ -122,7 +148,7 @@ $detalles->execute([$venta_id]);
 
     <div class="actions">
         <button class="btn" onclick="window.print()">Imprimir / Guardar PDF</button>
-        <a href="ventas.php?action=detalle&id=<?=$venta_id?>" class="btn" style="background:#a0aab8;"><- Volver</a>
+        <a href="ventas.php?action=detalle&id=<?=$factura['venta_id']?>" class="btn" style="background:#a0aab8;"><- Volver</a>
     </div>
 </body>
 </html>

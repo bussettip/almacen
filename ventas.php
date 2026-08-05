@@ -629,7 +629,12 @@ function sumarSurtido(detalleId, requerido) {
                 <td><span class="badge <?=$f['estatus']==='timbrado'?'badge-success':($f['estatus']==='error'?'badge-danger':'badge-warning')?>"><?=h($f['estatus'])?></span></td>
                 <td><?=moneda($f['total'])?></td>
                 <td><?=$f['created_at']?></td>
-                <td><a href="cfdi_descargar.php?id=<?=$f['id']?>" class="btn btn-sm btn-info" target="_blank">XML</a></td>
+                <td>
+                    <a href="cfdi_descargar.php?id=<?=$f['id']?>" class="btn btn-sm btn-info" target="_blank">XML</a>
+                    <?php if ($f['estatus']==='timbrado'): ?>
+                    <a href="factura.php?id=<?=$f['id']?>" class="btn btn-sm btn-primary" target="_blank">Factura PDF</a>
+                    <?php endif; ?>
+                </td>
                 <td style="font-size:.75rem;"><?=h($f['mensaje'] ?? '')?></td>
             </tr>
             <?php endforeach; ?>
