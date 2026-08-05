@@ -42,6 +42,7 @@ $files = @{
     "sat_test_conn.php"        = "sat_test_conn.php"
     "sat_probar_flow.php"      = "sat_probar_flow.php"
     "sat_log.php"              = "sat_log.php"
+    "sat_cert_chain.php"       = "sat_cert_chain.php"
     "facturas_sat.php"         = "facturas_sat.php"
     "includes\sat_helper.php"  = "includes/sat_helper.php"
     "factura.php"              = "factura.php"
