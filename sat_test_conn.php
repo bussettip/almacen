@@ -8,6 +8,8 @@ echo PHP_EOL . PHP_EOL;
 
 $urls = [
     'Login SAT' => 'https://cfdiau.sat.gob.mx/nidp/app/login?id=SATUPCFDiCon&sid=0&option=credential&sid=0',
+    'Portal CFDI (principal)' => 'https://portalcfdi.facturaelectronica.sat.gob.mx/',
+    'Portal CFDI (consulta receptor)' => 'https://portalcfdi.facturaelectronica.sat.gob.mx/ConsultaReceptor.aspx',
 ];
 
 foreach ($urls as $nombre => $url) {
@@ -34,12 +36,6 @@ foreach ($urls as $nombre => $url) {
         echo "ERROR curl: " . $err . PHP_EOL;
     } else {
         echo "Largo respuesta: " . strlen($resp) . " bytes" . PHP_EOL;
-        echo "Tiene divCaptcha: " . (stripos($resp, 'divCaptcha') !== false ? 'SI' : 'NO') . PHP_EOL;
-        if (stripos($resp, 'divCaptcha') === false) {
-            $txt = trim(strip_tags($resp));
-            $txt = preg_replace('/\s+/', ' ', $txt);
-            echo "Contenido (primeros 400): " . mb_substr($txt, 0, 400) . PHP_EOL;
-        }
     }
     echo PHP_EOL;
 }
