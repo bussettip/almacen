@@ -39,6 +39,7 @@ $files = @{
     "sat_descargar.php"        = "sat_descargar.php"
     "sat_descargar_zip.php"    = "sat_descargar_zip.php"
     "sat_debug.php"            = "sat_debug.php"
+    "sat_test_conn.php"        = "sat_test_conn.php"
     "facturas_sat.php"         = "facturas_sat.php"
     "includes\sat_helper.php"  = "includes/sat_helper.php"
     "factura.php"              = "factura.php"
