@@ -239,6 +239,7 @@ require 'includes/header.php';
         <div class="table-actions">
             <button type="button" class="btn btn-success btn-sm" onclick="exportarTablaExcel('#tabla-recientes','facturas_sat')"> Exportar Excel</button>
             <button type="button" class="btn btn-info btn-sm" onclick="imprimirTablaPDF('#tabla-recientes','Descargas recientes SAT')"> Imprimir PDF</button>
+            <a href="sat_descargar_zip.php" class="btn btn-warning btn-sm">Descargar todos (ZIP)</a>
         </div>
     </div>
     <div class="table-wrapper">

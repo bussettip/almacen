@@ -20,6 +20,7 @@ $files = @{
     "includes\sat_helper.php" = "includes/sat_helper.php"
     "cfdi_descargar.php" = "cfdi_descargar.php"
     "sat_descargar.php" = "sat_descargar.php"
+    "sat_descargar_zip.php" = "sat_descargar_zip.php"
     "facturas_sat.php" = "facturas_sat.php"
     "factura.php" = "factura.php"
     "prefactura.php" = "prefactura.php"
